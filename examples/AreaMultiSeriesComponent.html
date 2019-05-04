@@ -36,6 +36,8 @@
       var sampler = d3.range(0, 1, 0.01); // 100 samples
       areaData.values = sampler.map(t => { return {key: keyPolator(t), value: splinePolator(t)};});
     }
+    
+    
 
     var areaMultiSeriesComponent = d3.x3dom.component.areaMultiSeries();
 
@@ -69,6 +71,50 @@
         viewpoint.addEventListener("viewpointChanged", syncViewpoints, false);
       });
     };
+    
+    function SVGPathInterpolator (path, eps, maxIter) {
+        const safeIter = maxIter || 100;
+        const epsilon = eps || 0.00001;
+        const pathString = path || "M0,0L1,1";
+        const area = document.createElement('svg');
+        area.innerHTML = `
+            <path d='${pathString}' ></path>
+        `;
+        const svgpath = area.querySelector('path');
+        svgpath.setAttribute('d', pathString);
+        const totalLength = svgpath.getTotalLength();
+        const minPoint = svgpath.getPointAtLength(0);
+        const maxPoint = svgpath.getPointAtLength(totalLength);
+        let reverse = maxPoint.x < minPoint.x;
+        const range = reverse ? [maxPoint, minPoint] : [minPoint, maxPoint];
+        reverse = reverse ? -1 : 1;
+        return function interpolator (x) {
+            const targetX = x === 0 ? 0 : x || minPoint.x; // check for 0 and null/undefined
+            if ( targetX < range[0].x ) return range[0]; // clamp
+            if ( targetX > range[1].x ) return range[1];
+            const estimatedLength = estimateLength(totalLength / 2, 0, totalLength);
+            return svgpath.getPointAtLength(estimatedLength);
+            function estimateLength (l, mn, mx) {
+                let delta = svgpath.getPointAtLength(l).x - targetX;
+                let next_delta = 0;
+                let iter = 0;
+                //console.log(delta, targetX, epsilon);
+                while (Math.abs(delta) > epsilon && iter < safeIter) {
+                    iter++;
+                    //console.log(iter, Math.abs(delta) > epsilon);
+                    if (reverse * delta < 0) { mn = l; l = (l + mx) / 2; }
+                    else { mx = l; l = (mn + l) / 2; }
+                    next_delta = svgpath.getPointAtLength(l).x - targetX;
+                    if (Math.abs(Math.abs(delta) - Math.abs(next_delta)) < epsilon) break; // not improving, targetX may be in a gap;
+                    delta = next_delta;
+                }
+                return l;
+                // if (Math.abs(delta) < epsilon) return resultLength
+                // if (reverse * delta < 0) return estimateLength((totalLength + max)/2, resultLength, max)
+                // return estimateLength((min + resultLength)/2, min, resultLength)
+            }
+        }
+    } 
 
   </script>
 
