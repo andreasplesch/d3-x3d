@@ -28,7 +28,9 @@
     var smoothedSeries1 = areaMultiSeriesData.map( smoothData, {curve: d3.curveLinear, suffix: "_linear" });
     var smoothedSeries2 = areaMultiSeriesData.map( smoothData, {curve: d3.curveBasis, suffix: "_basisSpline" } );
     var smoothedSeries3 = areaMultiSeriesData.map( smoothData, {curve: d3.curveMonotoneX, suffix: "_mono" } );
-
+/*
+    smoothData(data) returns a copy of the input data series which is subsampled into a 100 samples, and has the smoothed values based on a provided d3.curve
+*/ 
     function smoothData ( areaData ) {
       // smooth
       var curve = this.curve;
@@ -82,6 +84,15 @@
         viewpoint.addEventListener("viewpointChanged", syncViewpoints, false);
       });
     };
+    
+    /*
+
+smoothData uses interpolateCurve(values) which returns an interpolator function similar to d3.interpoleBasis(values). The returned function expects input in the range [0,1] and returns a smoothed value. For example, interpolateCurve(values)(0) returns the the first value.
+
+interpolateCurve uses curvePolator(points) which returns a similar interpolator function. However, the returned function works in the arbitrary domain defined by the provided points and expects an input x in this domain.
+
+curvePolator uses SVGPathInterpolator(svgpath) which returns a similar interpolator function. However, the returned function is constructed based on an svgpath string. d3.line(points) outputs such svgpath strings.
+    */
     
     function interpolateCurve (values, curve, eps, maxIter) {
       const xrange = d3.range(0, 1, 1/values.length);
