@@ -23,18 +23,25 @@
      * Area Multi Component
      */
     var areaMultiSeriesData = d3.x3dom.randomData.dataset5();
+    areaMultiSeriesData.splice(-1,1);
 
-    areaMultiSeriesData.forEach( smoothData );
+    var smoothedSeries1 = areaMultiSeriesData.map( smoothData, {curve: d3.curveLinear, suffix: "_linear" });
+    var smoothedSeries2 = areaMultiSeriesData.map( smoothData, {curve: d3.curveBasis, suffix: "_basisSpline" } );
+    var smoothedSeries3 = areaMultiSeriesData.map( smoothData, {curve: d3.curveMonotoneX, suffix: "_mono" } );
 
     function smoothData ( areaData ) {
       // smooth
+      var curve = this.curve;
       var values = areaData.values;
       var keys = values.map(v => v.key);
-      var valuePolator = interpolateCurve(values.map(v => v.value));
+      var valuePolator = interpolateCurve(values.map(v => v.value), curve);
       var keyPicker = d3.interpolateDiscrete(keys);
       var keyPolator = function (t) { return d3.interpolate(keyPicker(t), keyPicker(t + 1/keys.length))(t) };
       var sampler = d3.range(0, 1, 0.01); // 100 samples
-      areaData.values = sampler.map(t => { return {key: keyPolator(t), value: valuePolator(t)};});
+      return { 
+        "key": areaData.key + this.suffix,
+        values: sampler.map(t => { return {key: keyPolator(t), value: valuePolator(t).y};})
+      };
     }
     
     var areaMultiSeriesComponent = d3.x3dom.component.areaMultiSeries();
@@ -46,11 +53,17 @@
       .attr("height", height + "px")
       .append("scene");
 
+     scene7
+       .append("orthoviewpoint")
+       .attr("position", "98.01942 45.21401 209.85072")
+       .attr("orientation", "-0.34193 0.93960 -0.01525 0.42513")
+       .attr("fieldOfView", "-5, -5, 55, 55");
+
     // Add chart component
-    scene7.call(viewpoint)
+    scene7 //.call(viewpoint)
       .append("group")
       .attr("class", "chart")
-      .datum(areaMultiSeriesData)
+      .datum(smoothedSeries3.concat(smoothedSeries2).concat(smoothedSeries1))
       .call(areaMultiSeriesComponent);
 
     /**
