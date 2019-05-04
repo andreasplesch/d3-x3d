@@ -76,7 +76,7 @@
         const safeIter = maxIter || 100;
         const epsilon = eps || 0.00001;
         const pathString = path || "M0,0L1,1";
-        const area = document.createElement('svg');
+        const area = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         area.innerHTML = `
             <path d='${pathString}' ></path>
         `;
