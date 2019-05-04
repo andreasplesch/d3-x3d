@@ -30,15 +30,13 @@
       // smooth
       var values = areaData.values;
       var keys = values.map(v => v.key);
-      var splinePolator = d3.interpolateBasis(values.map(v => v.value));
+      var valuePolator = interpolateCurve(values.map(v => v.value));
       var keyPicker = d3.interpolateDiscrete(keys);
       var keyPolator = function (t) { return d3.interpolate(keyPicker(t), keyPicker(t + 1/keys.length))(t) };
       var sampler = d3.range(0, 1, 0.01); // 100 samples
-      areaData.values = sampler.map(t => { return {key: keyPolator(t), value: splinePolator(t)};});
+      areaData.values = sampler.map(t => { return {key: keyPolator(t), value: valuePolator(t)};});
     }
     
-    
-
     var areaMultiSeriesComponent = d3.x3dom.component.areaMultiSeries();
 
     // Create scene
@@ -72,13 +70,25 @@
       });
     };
     
+    function interpolateCurve (values, curve, eps, maxIter) {
+      const xrange = d3.range(0, 1, 1/values.length);
+      const points = values.map( (v, i) => [xrange[i], v] );
+      return curvePolator (points, curve, eps, maxIter);
+    }
+    
+    function curvePolator (points, curve, eps, maxIter) {
+      curve = curve || d3.curveBasis;
+      const path = d3.line().curve(curve)(points);
+      return SVGPathInterpolator (path, eps, maxIter);
+    }
+    
     function SVGPathInterpolator (path, eps, maxIter) {
         const safeIter = maxIter || 100;
         const epsilon = eps || 0.00001;
         const pathString = path || "M0,0L1,1";
         const area = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         area.innerHTML = `
-            <path d='${pathString}' ></path>
+            <path d='${pathString}'></path>
         `;
         const svgpath = area.querySelector('path');
         svgpath.setAttribute('d', pathString);
