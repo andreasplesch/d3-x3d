@@ -6,6 +6,36 @@
  * @license GPLv2
  */
 
+//redefine shader function to disable x3dom gamma correction
+
+x3dom.shader.encodeGamma = function ( properties, expr )
+{
+    if ( properties.GAMMACORRECTION === "none" || properties.GAMMACORRECTION === "linear" )
+    {
+        // Naive implementation: no-op, return verbatim
+        return expr;
+    }
+    else
+    {
+        // The 2.0 and 2.2 cases are transparent at the call site
+        return "gammaEncode (" + expr + ")";
+    }
+};
+
+x3dom.shader.decodeGamma = function ( properties, expr )
+{
+    if ( properties.GAMMACORRECTION === "none" || properties.GAMMACORRECTION === "linear" )
+    {
+        // Naive implementation: no-op, return verbatim
+        return expr;
+    }
+    else
+    {
+        // The 2.0 and 2.2 cases are transparent at the call site
+        return "gammaDecode (" + expr + ")";
+    }
+};
+
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3'), require('d3-shape'), require('d3-array'), require('d3-interpolate')) :
   typeof define === 'function' && define.amd ? define(['d3', 'd3-shape', 'd3-array', 'd3-interpolate'], factory) :
